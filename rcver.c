@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
+#include <net/if.h>
 #include "proto.h"
 
 #define IPSTRSIZE 32
@@ -25,11 +26,15 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    int mbsflag = 1;
-    if (setsockopt(sfd, SOL_SOCKET, SO_BROADCAST, &mbsflag, sizeof(mbsflag)) < 0) {
+    struct ip_mreqn mreq;
+    inet_pton(AF_INET, MTGRP1, &mreq.imr_multiaddr);
+    inet_pton(AF_INET, "0.0.0.0", &mreq.imr_address);
+    mreq.imr_ifindex = if_nametoindex("ens33");
+    if (setsockopt(sfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0) {
         perror("setsockopt");
         return 1;
     }
+    printf("join multicast group\n");
 
     struct sockaddr_in localaddr;
     localaddr.sin_family = AF_INET;

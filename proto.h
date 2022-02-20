@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define MTGRP "224.2.2.2"
+#define MTGRP1 "224.2.2.3"
 #define RCVPORT "9527"
 #define NAMEMAX (512 - 8 - 8)
 
