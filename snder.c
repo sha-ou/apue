@@ -11,12 +11,12 @@
 
 int main(int argc, char *argv[])
 {
-    if (argc < 3) {
+    if (argc < 2) {
         fprintf(stderr, "Usage...\n");
         return 1;
     }
 
-    size_t namelen = strlen(argv[2]);
+    size_t namelen = strlen(argv[1]);
     if (namelen > NAMEMAX - 1) {
         fprintf(stderr, "name too long\n");
         return 1;
@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    strcpy((char *)sndbuf->name, argv[2]);
+    strcpy((char *)sndbuf->name, argv[1]);
     sndbuf->math = htonl(97);
     sndbuf->chinese = htonl(98);
 
@@ -38,10 +38,16 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    int mbsflag = 1;
+    if (setsockopt(sfd, SOL_SOCKET, SO_BROADCAST, &mbsflag, sizeof(mbsflag)) < 0) {
+        perror("setsockopt");
+        return 1;
+    }
+
     struct sockaddr_in peeraddr;
     peeraddr.sin_family = AF_INET;
     peeraddr.sin_port = htons(atoi(RCVPORT));
-    inet_pton(AF_INET, argv[1], &peeraddr.sin_addr.s_addr);
+    inet_pton(AF_INET, "255.255.255.255", &peeraddr.sin_addr.s_addr);
     if (sendto(sfd, sndbuf, sndbuflen, 0, (void *)&peeraddr, sizeof(peeraddr)) < 0) {
         perror("sendto");
         close(sfd);
@@ -50,5 +56,7 @@ int main(int argc, char *argv[])
 
     free(sndbuf);
     close(sfd);
+
+    printf("OK\n");
     return 0;
 }

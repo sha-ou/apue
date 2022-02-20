@@ -25,6 +25,12 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    int mbsflag = 1;
+    if (setsockopt(sfd, SOL_SOCKET, SO_BROADCAST, &mbsflag, sizeof(mbsflag)) < 0) {
+        perror("setsockopt");
+        return 1;
+    }
+
     struct sockaddr_in localaddr;
     localaddr.sin_family = AF_INET;
     localaddr.sin_port = htons(atoi(RCVPORT));
