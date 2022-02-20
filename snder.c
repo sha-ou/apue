@@ -6,14 +6,31 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
+#include <string.h>
 #include "proto.h"
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2) {
+    if (argc < 3) {
         fprintf(stderr, "Usage...\n");
         return 1;
     }
+
+    size_t namelen = strlen(argv[2]);
+    if (namelen > NAMEMAX - 1) {
+        fprintf(stderr, "name too long\n");
+        return 1;
+    }
+
+    size_t sndbuflen = sizeof(struct msg_st) + namelen + 1;
+    struct msg_st *sndbuf = (struct msg_st *)malloc(sizeof(*sndbuf) + namelen + 1);
+    if (!sndbuf) {
+        return 1;
+    }
+
+    strcpy((char *)sndbuf->name, argv[2]);
+    sndbuf->math = htonl(97);
+    sndbuf->chinese = htonl(98);
 
     int sfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sfd < 0) {
@@ -21,21 +38,17 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    struct msg_st sndbuf = { 0 };
-    snprintf((char *)sndbuf.name, sizeof(sndbuf.name), "%s", "Aya");
-    sndbuf.math = ntohl(97);
-    sndbuf.chinese = ntohl(98);
-
     struct sockaddr_in peeraddr;
     peeraddr.sin_family = AF_INET;
     peeraddr.sin_port = htons(atoi(RCVPORT));
     inet_pton(AF_INET, argv[1], &peeraddr.sin_addr.s_addr);
-    if (sendto(sfd, &sndbuf, sizeof(sndbuf), 0, (void *)&peeraddr, sizeof(peeraddr)) < 0) {
+    if (sendto(sfd, sndbuf, sndbuflen, 0, (void *)&peeraddr, sizeof(peeraddr)) < 0) {
         perror("sendto");
         close(sfd);
         return 1;
     }
 
+    free(sndbuf);
     close(sfd);
     return 0;
 }
